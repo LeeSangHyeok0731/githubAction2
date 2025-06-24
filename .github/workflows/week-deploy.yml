@@ -9,26 +9,20 @@ jobs:
   create-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: peter-evans/create-pull-request@v6
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
         with:
+          ref: develop
           fetch-depth: 0
 
       - name: Create Pull Request from develop to main
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.PAT_CREATE_PULL_REQUEST }}
-          # base 브랜치는 항상 main으로 고정
+          token: ${{ secrets.GITHUB_TOKEN }}
           base: main
-          # head 브랜치는 develop으로 설정
-          head: develop
-          # 변경 없는 경우에도 PR 생성 방지
-          commit-message: "chore: biweekly merge develop → main"
+          branch: auto-pr-from-develop-to-main-${{ github.run_number }}
           title: "🔄 Biweekly: merge develop into main"
           body: |
             자동 생성 PR입니다.  
             매 2주마다 진행되는 develop → main 병합입니다.  
             ⚠️ 수동 확인 후 승인 부탁드립니다.
-          # 필요 시 reviewer 지정
-          reviewers: |
-            team-lead
