@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0
 
       - name: Create Pull Request from develop to main
-        uses: thomaseizinger/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.PAT_CREATE_PULL_REQUEST }}
           # base 브랜치는 항상 main으로 고정
