@@ -15,6 +15,9 @@ jobs:
           ref: develop
           fetch-depth: 0
 
+      - name: Fetch all branches
+        run: git fetch --all --unshallow
+
       - name: Create Pull Request from develop to main
         uses: peter-evans/create-pull-request@v6
         with:
