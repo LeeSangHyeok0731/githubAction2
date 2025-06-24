@@ -3,7 +3,7 @@ name: Create PR from develop to main every 2 weeks
 on:
   schedule:
     - cron: "*/5 * * * *"
-  workflow_dispatch: # 수동 실행도 가능하게
+  workflow_dispatch:
 
 jobs:
   create-pr:
@@ -13,16 +13,16 @@ jobs:
       - name: Checkout develop branch
         uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: main
           fetch-depth: 0
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: main
+          base: develop
           branch: auto-pr-from-develop-to-main-${{ github.run_number }}
-          title: "🔀 자동 PR: develop → main"
+          title: "🔀 자동 PR: develop <- main"
           body: |
             이 Pull Request는 GitHub Actions에 의해 자동으로 생성되었습니다.
             - develop 브랜치의 변경사항을 main 브랜치로 병합합니다.
