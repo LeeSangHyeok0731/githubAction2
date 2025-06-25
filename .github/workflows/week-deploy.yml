@@ -19,14 +19,14 @@ jobs:
 
       - name: Fetch all branches
         run: |
-          git fetch origin main:main
-          git fetch origin develop:develop
+          git fetch origin main
+          git fetch origin develop
 
       - name: Check for changes between develop and main
         id: check_changes
         run: |
           # develop와 main 브랜치 비교
-          if git diff --quiet main..develop; then
+          if git diff --quiet origin/main..origin/develop; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "No changes between develop and main"
           else
@@ -55,8 +55,8 @@ jobs:
         id: commit_info
         run: |
           # develop에서 main으로의 새로운 커밋들 가져오기
-          COMMITS=$(git log main..develop --oneline --no-merges | head -10)
-          COMMIT_COUNT=$(git rev-list --count main..develop)
+          COMMITS=$(git log origin/main..origin/develop --oneline --no-merges | head -10)
+          COMMIT_COUNT=$(git rev-list --count origin/main..origin/develop)
 
           echo "recent_commits<<EOF" >> $GITHUB_OUTPUT
           echo "$COMMITS" >> $GITHUB_OUTPUT
@@ -65,7 +65,7 @@ jobs:
           echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
 
           # 마지막 커밋 작성자 정보
-          LAST_AUTHOR=$(git log main..develop --pretty=format:"%an" -1)
+          LAST_AUTHOR=$(git log origin/main..origin/develop --pretty=format:"%an" -1)
           echo "last_author=$LAST_AUTHOR" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
