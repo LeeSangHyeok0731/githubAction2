@@ -1,4 +1,4 @@
-name: Auto PR from Develop to Main
+name: 정기 배포 PR 생성
 
 on:
   schedule:
@@ -52,22 +52,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get commit information
-        if: steps.check_changes.outputs.has_changes == 'true' && steps.check_pr.outputs.pr_exists == 'false'
-        id: commit_info
-        run: |
-          COMMITS=$(git log origin/main..origin/develop --oneline --no-merges | head -10)
-          COMMIT_COUNT=$(git rev-list --count origin/main..origin/develop)
-
-          echo "recent_commits<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMITS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
-
-          LAST_AUTHOR=$(git log origin/main..origin/develop --pretty=format:"%an" -1)
-          echo "last_author=$LAST_AUTHOR" >> $GITHUB_OUTPUT
-
       - name: Create Pull Request using GitHub CLI
         if: steps.check_changes.outputs.has_changes == 'true' && steps.check_pr.outputs.pr_exists == 'false'
         id: create_pr
@@ -79,7 +63,7 @@ jobs:
           )
 
           PR_URL=$(gh pr create \
-            --title "🚀 Auto PR: Develop → Main (${{ steps.commit_info.outputs.commit_count }} commits)" \
+            --title "[merge] 정기 배포" \
             --body "$PR_BODY" \
             --base main \
             --head develop)
