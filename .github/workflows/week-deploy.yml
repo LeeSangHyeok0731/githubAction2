@@ -2,11 +2,9 @@ name: Auto PR from Develop to Main
 
 on:
   schedule:
-    # 5분마다 실행
     - cron: "*/5 * * * *"
-  workflow_dispatch: # 수동 실행 가능
+  workflow_dispatch:
 
-# 권한 설정 추가
 permissions:
   contents: read
   pull-requests: write
@@ -31,7 +29,6 @@ jobs:
       - name: Check for changes between develop and main
         id: check_changes
         run: |
-          # develop와 main 브랜치 비교
           if git diff --quiet origin/main..origin/develop; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "No changes between develop and main"
@@ -44,7 +41,6 @@ jobs:
         if: steps.check_changes.outputs.has_changes == 'true'
         id: check_pr
         run: |
-          # 기존 PR 확인 (develop -> main)
           PR_COUNT=$(gh pr list --base main --head develop --state open --json number | jq length)
           if [ "$PR_COUNT" -gt 0 ]; then
             echo "pr_exists=true" >> $GITHUB_OUTPUT
@@ -60,7 +56,6 @@ jobs:
         if: steps.check_changes.outputs.has_changes == 'true' && steps.check_pr.outputs.pr_exists == 'false'
         id: commit_info
         run: |
-          # develop에서 main으로의 새로운 커밋들 가져오기
           COMMITS=$(git log origin/main..origin/develop --oneline --no-merges | head -10)
           COMMIT_COUNT=$(git rev-list --count origin/main..origin/develop)
 
@@ -70,7 +65,6 @@ jobs:
 
           echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
 
-          # 마지막 커밋 작성자 정보
           LAST_AUTHOR=$(git log origin/main..origin/develop --pretty=format:"%an" -1)
           echo "last_author=$LAST_AUTHOR" >> $GITHUB_OUTPUT
 
@@ -78,7 +72,6 @@ jobs:
         if: steps.check_changes.outputs.has_changes == 'true' && steps.check_pr.outputs.pr_exists == 'false'
         id: create_pr
         run: |
-          # GitHub CLI를 사용하여 직접 PR 생성
           PR_BODY="### 개요 💡\ndevelop 브랜치의 내용을 main 브랜치에 반영합니다."
 
           PR_URL=$(gh pr create \
