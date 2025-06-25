@@ -79,7 +79,7 @@ jobs:
           )
 
           PR_URL=$(gh pr create \
-            --title "🚀 Auto PR: Develop → Main (${{ steps.commit_info.outputs.commit_count }} commits)" \
+            --title "[merge] 정기 배포" \
             --body "$PR_BODY" \
             --base main \
             --head develop)
