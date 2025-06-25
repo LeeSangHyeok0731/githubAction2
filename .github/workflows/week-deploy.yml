@@ -72,7 +72,11 @@ jobs:
         if: steps.check_changes.outputs.has_changes == 'true' && steps.check_pr.outputs.pr_exists == 'false'
         id: create_pr
         run: |
-          PR_BODY="### 개요 💡\ndevelop 브랜치의 내용을 main 브랜치에 반영합니다."
+          PR_BODY=$(cat <<EOF
+          ### 개요 💡
+          develop 브랜치의 내용을 main 브랜치에 반영합니다.
+          EOF
+          )
 
           PR_URL=$(gh pr create \
             --title "🚀 Auto PR: Develop → Main (${{ steps.commit_info.outputs.commit_count }} commits)" \
