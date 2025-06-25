@@ -15,3 +15,9 @@ function check3() {
 }
 
 check3();
+
+function check4() {
+  console.log("추가 수정");
+}
+
+check4();
