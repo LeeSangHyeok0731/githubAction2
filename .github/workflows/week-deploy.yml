@@ -1,28 +1,35 @@
-name: "Biweekly Develop → Main PR"
+name: Auto PR from develop to main
 
 on:
   schedule:
-    - cron: "0 0 * * 1/2" # 매 2주 마다 월요일 UTC 00:00에 실행
-  workflow_dispatch: # 수동 트리거 지원
+    - cron: "*/5 * * * *" # 14일마다 실행 (UTC 기준)
+  workflow_dispatch: # 수동 실행도 가능
 
 jobs:
-  create-pr:
+  create-pull-request:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout develop branch
         uses: actions/checkout@v4
         with:
           ref: develop
-          fetch-depth: 0
 
-      - name: Create Pull Request from develop to main
-        uses: peter-evans/create-pull-request@v6
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: main
-          branch: auto-pr-from-develop-to-main-${{ github.run_number }}
-          title: "🔄 Biweekly: merge develop into main"
+          base: main # PR 대상 브랜치
+          branch: auto/develop-to-main # PR 소스 브랜치
+          title: "🔁 Merge develop → main"
           body: |
-            자동 생성 PR입니다.  
-            매 2주마다 진행되는 develop → main 병합입니다.  
-            ⚠️ 수동 확인 후 승인 부탁드립니다.
+            자동 생성된 PR입니다.  
+            - source: `develop`  
+            - target: `main`
+          commit-message: "chore: auto PR from develop to main"
+          delete-branch: true
