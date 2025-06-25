@@ -6,6 +6,12 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch: # 수동 실행 가능
 
+# 권한 설정 추가
+permissions:
+  contents: read
+  pull-requests: write
+  repository-projects: write
+
 jobs:
   create-pr:
     runs-on: ubuntu-latest
@@ -84,7 +90,7 @@ jobs:
             **타겟 브랜치:** `main`
             **커밋 수:** ${{ steps.commit_info.outputs.commit_count }}개
             **마지막 작성자:** ${{ steps.commit_info.outputs.last_author }}
-            **생성 시간:** ${{ github.event.repository.updated_at }}
+            **생성 시간:** ${{ github.event.head_commit.timestamp || github.run_id }}
 
             ### 📝 최근 커밋들
             ```
@@ -98,3 +104,10 @@ jobs:
 
             ---
             *이 PR은 5분마다 자동으로 생성됩니다. 변경사항이 있을 때만 새로운 PR이 생성됩니다.*
+
+      - name: Output PR information
+        if: steps.create_pr.outputs.pull-request-number
+        run: |
+          echo "Pull Request created successfully!"
+          echo "PR Number: ${{ steps.create_pr.outputs.pull-request-number }}"
+          echo "PR URL: ${{ steps.create_pr.outputs.pull-request-url }}"
