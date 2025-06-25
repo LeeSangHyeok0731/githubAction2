@@ -74,40 +74,45 @@ jobs:
           LAST_AUTHOR=$(git log origin/main..origin/develop --pretty=format:"%an" -1)
           echo "last_author=$LAST_AUTHOR" >> $GITHUB_OUTPUT
 
-      - name: Create Pull Request
+      - name: Create Pull Request using GitHub CLI
         if: steps.check_changes.outputs.has_changes == 'true' && steps.check_pr.outputs.pr_exists == 'false'
         id: create_pr
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: develop
-          base: main
-          title: "🚀 Auto PR: Develop → Main (${{ steps.commit_info.outputs.commit_count }} commits)"
-          body: |
-            ## 🔄 자동 생성된 Pull Request
+        run: |
+          # GitHub CLI를 사용하여 직접 PR 생성
+          PR_BODY="## 🔄 자동 생성된 Pull Request
 
-            **소스 브랜치:** `develop`
-            **타겟 브랜치:** `main`
-            **커밋 수:** ${{ steps.commit_info.outputs.commit_count }}개
-            **마지막 작성자:** ${{ steps.commit_info.outputs.last_author }}
-            **생성 시간:** ${{ github.event.head_commit.timestamp || github.run_id }}
+          **소스 브랜치:** \`develop\`
+          **타겟 브랜치:** \`main\`
+          **커밋 수:** ${{ steps.commit_info.outputs.commit_count }}개
+          **마지막 작성자:** ${{ steps.commit_info.outputs.last_author }}
+          **생성 시간:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-            ### 📝 최근 커밋들
-            ```
-            ${{ steps.commit_info.outputs.recent_commits }}
-            ```
+          ### 📝 최근 커밋들
+          \`\`\`
+          ${{ steps.commit_info.outputs.recent_commits }}
+          \`\`\`
 
-            ### ✅ 체크리스트
-            - [ ] 코드 리뷰 완료
-            - [ ] 테스트 통과 확인
-            - [ ] 배포 준비 완료
+          ### ✅ 체크리스트
+          - [ ] 코드 리뷰 완료
+          - [ ] 테스트 통과 확인
+          - [ ] 배포 준비 완료
 
-            ---
-            *이 PR은 5분마다 자동으로 생성됩니다. 변경사항이 있을 때만 새로운 PR이 생성됩니다.*
+          ---
+          *이 PR은 5분마다 자동으로 생성됩니다. 변경사항이 있을 때만 새로운 PR이 생성됩니다.*"
+
+          PR_URL=$(gh pr create \
+            --title "🚀 Auto PR: Develop → Main (${{ steps.commit_info.outputs.commit_count }} commits)" \
+            --body "$PR_BODY" \
+            --base main \
+            --head develop)
+
+          echo "pull-request-url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "PR created: $PR_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Output PR information
-        if: steps.create_pr.outputs.pull-request-number
+        if: steps.create_pr.outputs.pull-request-url
         run: |
           echo "Pull Request created successfully!"
-          echo "PR Number: ${{ steps.create_pr.outputs.pull-request-number }}"
           echo "PR URL: ${{ steps.create_pr.outputs.pull-request-url }}"
