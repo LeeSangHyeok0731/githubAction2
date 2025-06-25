@@ -1,35 +1,100 @@
-name: Auto PR from develop to main
+name: Auto PR from Develop to Main
 
 on:
   schedule:
-    - cron: "*/5 * * * *" # 14일마다 실행 (UTC 기준)
-  workflow_dispatch: # 수동 실행도 가능
+    # 5분마다 실행
+    - cron: "*/5 * * * *"
+  workflow_dispatch: # 수동 실행 가능
 
 jobs:
-  create-pull-request:
+  create-pr:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout develop branch
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: develop
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configure Git
+      - name: Fetch all branches
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main:main
+          git fetch origin develop:develop
+
+      - name: Check for changes between develop and main
+        id: check_changes
+        run: |
+          # develop와 main 브랜치 비교
+          if git diff --quiet main..develop; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes between develop and main"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected between develop and main"
+          fi
+
+      - name: Check if PR already exists
+        if: steps.check_changes.outputs.has_changes == 'true'
+        id: check_pr
+        run: |
+          # 기존 PR 확인 (develop -> main)
+          PR_COUNT=$(gh pr list --base main --head develop --state open --json number | jq length)
+          if [ "$PR_COUNT" -gt 0 ]; then
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+            echo "Existing PR found"
+          else
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+            echo "No existing PR found"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get commit information
+        if: steps.check_changes.outputs.has_changes == 'true' && steps.check_pr.outputs.pr_exists == 'false'
+        id: commit_info
+        run: |
+          # develop에서 main으로의 새로운 커밋들 가져오기
+          COMMITS=$(git log main..develop --oneline --no-merges | head -10)
+          COMMIT_COUNT=$(git rev-list --count main..develop)
+
+          echo "recent_commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+
+          # 마지막 커밋 작성자 정보
+          LAST_AUTHOR=$(git log main..develop --pretty=format:"%an" -1)
+          echo "last_author=$LAST_AUTHOR" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        if: steps.check_changes.outputs.has_changes == 'true' && steps.check_pr.outputs.pr_exists == 'false'
+        id: create_pr
+        uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: main # PR 대상 브랜치
-          branch: auto/develop-to-main # PR 소스 브랜치
-          title: "🔁 Merge develop → main"
+          branch: develop
+          base: main
+          title: "🚀 Auto PR: Develop → Main (${{ steps.commit_info.outputs.commit_count }} commits)"
           body: |
-            자동 생성된 PR입니다.  
-            - source: `develop`  
-            - target: `main`
-          commit-message: "chore: auto PR from develop to main"
-          delete-branch: true
+            ## 🔄 자동 생성된 Pull Request
+
+            **소스 브랜치:** `develop`
+            **타겟 브랜치:** `main`
+            **커밋 수:** ${{ steps.commit_info.outputs.commit_count }}개
+            **마지막 작성자:** ${{ steps.commit_info.outputs.last_author }}
+            **생성 시간:** ${{ github.event.repository.updated_at }}
+
+            ### 📝 최근 커밋들
+            ```
+            ${{ steps.commit_info.outputs.recent_commits }}
+            ```
+
+            ### ✅ 체크리스트
+            - [ ] 코드 리뷰 완료
+            - [ ] 테스트 통과 확인
+            - [ ] 배포 준비 완료
+
+            ---
+            *이 PR은 5분마다 자동으로 생성됩니다. 변경사항이 있을 때만 새로운 PR이 생성됩니다.*
