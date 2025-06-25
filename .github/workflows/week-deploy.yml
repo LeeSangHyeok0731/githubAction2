@@ -1,4 +1,4 @@
-name: Auto PR from Develop to Main
+name: 정기 배포 PR 생성
 
 on:
   schedule:
