@@ -27,3 +27,9 @@ function check5() {
 }
 
 check5();
+
+function check6() {
+  console.log("테스트");
+}
+
+check6();
